@@ -37,31 +37,7 @@
 
 using namespace rkcommon::math;
 const std::string voxel_type = "float32";
-const vec3f dims{64, 64, 64};
-
-// helper function to write the rendered image as PPM file
-void writePPM(const char *fileName, const vec2i &size, const uint32_t *pixel)
-{
-    FILE *file = fopen(fileName, "wb");
-    if (file == nullptr) {
-        fprintf(stderr, "fopen('%s', 'wb') failed: %d", fileName, errno);
-        return;
-    }
-    fprintf(file, "P6\n%i %i\n255\n", size.x, size.y);
-    unsigned char *out = (unsigned char *)alloca(3 * size.x);
-    for (int y = 0; y < size.y; y++) {
-        const unsigned char *in =
-            (const unsigned char *)&pixel[(size.y - 1 - y) * size.x];
-        for (int x = 0; x < size.x; x++) {
-        out[3 * x + 0] = in[4 * x + 0];
-        out[3 * x + 1] = in[4 * x + 1];
-        out[3 * x + 2] = in[4 * x + 2];
-        }
-        fwrite(out, 3 * size.x, sizeof(char), file);
-    }
-    fprintf(file, "\n");
-    fclose(file);
-}
+const vec3f dims{128, 128, 128};
 
 int main(int argc, const char **argv)
 {
@@ -93,7 +69,7 @@ int main(int argc, const char **argv)
     // load volumes 
     std::vector<Volume> volumes;
 
-    int count = 30;
+    int count = 3;
     for(auto f : files){
         if(f.timeStep % count == 0){
             volumes.push_back(load_raw_volume(f.fileDir, dims, voxel_type));
@@ -118,9 +94,9 @@ int main(int argc, const char **argv)
 
     // camera 
     // TODO: need to change positions
-    vec3f cam_pos{0.f, 0.f, -64.f};
+    vec3f cam_pos{0.f, 0.f, -90.f};
     vec3f cam_up{0.f, 1.f, 0.f};
-    vec3f cam_view{0.f, 0.f, 32.f};
+    vec3f cam_view{0.f, 0.f, 64.f};
 
     // initialize OSPRay; OSPRay parses (and removes) its commandline parameters,
     // e.g. "--osp:debug"
@@ -192,14 +168,6 @@ int main(int argc, const char **argv)
             stbi_write_jpg(filename.c_str(), imgSize.x, imgSize.y, 4, fb, 100);
             // writePPM(filename.c_str(), imgSize, fb);
             framebuffer.unmap(fb);
-
-            // ospray::cpp::PickResult res = framebuffer.pick(renderer, camera, world, 0.5f, 0.5f);
-
-            // if (res.hasHit) {
-            //     std::cout << "Picked geometry [inst: " << res.instance.handle()
-            //                 << ", model: " << res.model.handle() << ", prim: " << res.primID
-            //                 << "]" << std::endl;
-            // }
         }
     }
 

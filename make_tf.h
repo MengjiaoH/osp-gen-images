@@ -36,7 +36,7 @@ ospray::cpp::TransferFunction makeTransferFunction(const std::string tfColorMap,
     std::string tfOpacityMap = "linear";
 
     if (tfOpacityMap == "linear") {
-        opacities.emplace_back(1.f);
+        opacities.emplace_back(0.f);
         opacities.emplace_back(1.f);
     }
 

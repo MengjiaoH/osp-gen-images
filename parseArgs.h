@@ -11,6 +11,7 @@ struct Args
     std::vector<std::string> timeStepPaths;
     std::string variableName;
     int timeStep = 0;
+    int dims = 0;
 };
 
 std::string getFileExt(const std::string& s) 
@@ -35,6 +36,8 @@ void parseArgs(int argc, const char **argv, Args &args)
             args.timeStep = std::atoi(argv[++i]);
         }else if(arg == "-variable"){
             args.variableName = argv[++i];
+        }else if(arg == "-dims"){
+            args.dims = std::atoi(argv[++i]);
         }else if(arg == "-multi-ts"){
             for(; i + 1 < argc; ++i){
                 if(argv[i+1][0] == '-'){

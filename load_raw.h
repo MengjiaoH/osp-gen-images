@@ -92,7 +92,7 @@ Volume load_raw_volume(const std::string &fname,
     // find the range
     volume.range.x = *std::min_element(volume.voxel_data->begin(), volume.voxel_data->end());
     volume.range.y = *std::max_element(volume.voxel_data->begin(), volume.voxel_data->end());
-    std::cout << "volume range: " << volume.range << std::endl;
+    // std::cout << "volume range: " << volume.range << std::endl;
     // float b = 1.f / (volume.range.y - volume.range.x) * 255.f;
     // std::vector<float> &voxels = *volume.voxel_data;
     // for(int i = 0; i < volume.n_voxels(); ++i){

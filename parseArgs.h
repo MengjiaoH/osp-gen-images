@@ -12,6 +12,7 @@ struct Args
     std::string variableName;
     int timeStep = 0;
     int dims = 0;
+    int n_samples = 100;
 };
 
 std::string getFileExt(const std::string& s) 
@@ -38,6 +39,8 @@ void parseArgs(int argc, const char **argv, Args &args)
             args.variableName = argv[++i];
         }else if(arg == "-dims"){
             args.dims = std::atoi(argv[++i]);
+        }else if(arg == "-n_samples"){
+            args.n_samples = std::atoi(argv[++i]);
         }else if(arg == "-multi-ts"){
             for(; i + 1 < argc; ++i){
                 if(argv[i+1][0] == '-'){

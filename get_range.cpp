@@ -28,7 +28,7 @@ int main(int argc, const char **argv)
         for(dirent *e = readdir(dp); e; e = readdir(dp)){
             std::string name = e ->d_name;
             if(name.length() > 3){
-                const int timestep = std::stoi(name.substr(6, name.find(".") - 6));
+                const int timestep = std::stoi(name.substr(10, name.find(".") - 10));
                 const std::string filename = dir + "/" + name;
                 // std::cout << filename << " " << timestep << std::endl;
                 timesteps t(timestep, filename);
@@ -42,11 +42,11 @@ int main(int argc, const char **argv)
     std::vector<Volume> volumes;
     const vec3i dims{args.dims, args.dims, args.dims};
 
-    int count = 3;
+    int count = 500;
     for(auto f : files){
-        if(f.timeStep % count == 0){
+        // if(f.timeStep % count == 0){
             volumes.push_back(load_raw_volume(f.fileDir, dims, voxel_type));
-        }
+        // }
     }    
 
     box3f worldBound = box3f(-dims / 2 * volumes[0].spacing, dims / 2 * volumes[0].spacing);

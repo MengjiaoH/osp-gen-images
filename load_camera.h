@@ -44,13 +44,13 @@ std::vector<vec3f> generate_fibonacci_sphere(const size_t n_points, const float 
 std::vector<Camera> gen_cameras(const int num, const box3f &world_bounds){
     std::vector<Camera> cameras;
     std::srand((unsigned)time(NULL));
-    int part = num / 100;
+    int part = num / 500 ;
     for (int i = 0; i < part; i++){
-        // float scale = ((float) rand()/RAND_MAX) * 2.5;
-        float scale = 0.5;
+        float scale = ((float) rand()/RAND_MAX) * 2;
+        // float scale = 0.9;
         const float orbit_radius = length(world_bounds.size()) * scale;
         std::cout << "orbit radius: " << orbit_radius << std::endl;
-        auto orbit_points = generate_fibonacci_sphere(num, orbit_radius);
+        auto orbit_points = generate_fibonacci_sphere(500, orbit_radius);
         for (const auto &p : orbit_points) {
             cameras.emplace_back(p + world_bounds.center(), normalize(-p), vec3f(0, -1, 0));
         }

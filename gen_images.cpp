@@ -21,12 +21,12 @@ using namespace rkcommon::math;
 #include "make_ospvolume.h"
 #include "make_tf.h"
 #include "load_camera.h"
+#include "ArcballCamera.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 const std::string voxel_type = "float32";
-const vec2f range{0.f, 1.f};
 // const vec2f range{-1.0f, 1.0f};
 
 template<typename T>
@@ -75,13 +75,13 @@ int main(int argc, const char **argv)
         vec3f up{temp[6], temp[7], temp[8]};
         cameras.emplace_back(pos, dir, up);
     }
-    // // debug
-    // for(int i = 0; i < cameras.size(); i++){
-    //     std::cout << "index: " << i << "\n";
-    //     std::cout << "pos: " << cameras[i].pos << "\n";
-    //     std::cout << "dir: " << cameras[i].dir << "\n";
-    //     std::cout << "up: " << cameras[i].up << "\n";
-    // }
+    // debug
+    for(int i = 0; i < cameras.size(); i++){
+        std::cout << "index: " << i << "\n";
+        std::cout << "pos: " << cameras[i].pos << "\n";
+        std::cout << "dir: " << cameras[i].dir << "\n";
+        std::cout << "up: " << cameras[i].up << "\n";
+    }
     // load all volume files 
     std::vector<timesteps> files;
     for(const auto &dir : args.timeStepPaths){
@@ -93,9 +93,10 @@ int main(int argc, const char **argv)
             std::string name = e ->d_name;
             // std::cout << "name " << name << std::endl;
             if(name.length() > 3){
-                const int timestep = std::stoi(name.substr(6, name.find(".") - 6));
+                // std::cout << name.substr(10, name.find(".") - 10) << std::endl;
+                const int timestep = std::stoi(name.substr(10, name.find(".") - 10));
                 const std::string filename = dir + "/" + name;
-                // std::cout << filename << " " << timestep << std::endl;
+                std::cout << filename << " " << timestep << std::endl;
                 timesteps t(timestep, filename);
                 files.push_back(t);
             }
@@ -106,8 +107,10 @@ int main(int argc, const char **argv)
 
     // Imgae size 
     vec2i imgSize;
-    imgSize.x = 300; // width
-    imgSize.y = 300; // height
+    imgSize.x = 256; // width
+    imgSize.y = 256; // height
+
+    int index = 1;
 
     // for each file render images with varying camera position 
     for(auto f : files){
@@ -116,6 +119,14 @@ int main(int argc, const char **argv)
         Volume volume;
         const vec3i dims{args.dims, args.dims, args.dims};
         volume = load_raw_volume(f.fileDir, dims, voxel_type);
+        // box3f worldBound = box3f(-dims / 2 * volume.spacing, dims / 2 * volume.spacing);
+        // ArcballCamera arcballCamera(worldBound, imgSize);
+        // vec3f cam_pos = vec3f{200.f, 0.f, 0.f};
+        vec2f range = vec2f{-2.92272, 0.407719};
+
+        // std::cout << "camera pos " << arcballCamera.eyePos() << std::endl;
+        // std::cout << "camera look dir " << arcballCamera.lookDir() << std::endl;
+        // std::cout << "camera up dir " << arcballCamera.upDir() << std::endl;
         {
             // //! Transfer function
             const std::string colormap = "jet";
@@ -174,10 +185,13 @@ int main(int argc, const char **argv)
                     framebuffer.renderFrame(renderer, camera, world);
 
                 uint32_t *fb = (uint32_t *)framebuffer.map(OSP_FB_COLOR);
-                std::string filename = "volume_" + std::to_string(f.timeStep) + "_" + std::to_string(i+1) + ".jpg";
+                // std::cout << "file dir " << f.fileDir << std::endl;
+                std::string filename = "volume_ts" + std::to_string(f.timeStep)+ "_cam" + std::to_string(i)  + ".jpg";
+                // + "_" + std::to_string(index)
                 // std::cout << filename << std::endl;
                 stbi_write_jpg(filename.c_str(), imgSize.x, imgSize.y, 4, fb, 100);
                 framebuffer.unmap(fb);
+                // index++;
             }
 
         }

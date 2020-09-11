@@ -25,7 +25,7 @@ using namespace rkcommon::math;
 #include "stb_image_write.h"
 
 const std::string voxel_type = "float32";
-const vec2f range{0.f, 1.f};
+const vec2f range{-2.92272, 0.407719};
 // const vec2f range{-1.0f, 1.0f};
 
 int main(int argc, const char **argv)
@@ -54,10 +54,11 @@ int main(int argc, const char **argv)
     const int num = args.n_samples;
     const box3f worldBound = box3f(-dims / 2 * volume.spacing, dims / 2 * volume.spacing);
     std::vector<Camera> cameras = gen_cameras(num, worldBound);
+    std::cout << "camera pos:" << cameras.size() << std::endl;
     
     std::ofstream outfile;
     // save camera to file
-    outfile.open("input.txt");
+    outfile.open("/home/mengjiao/Desktop/projects/osp-gen-images/input.txt");
     for(int i = 0; i < cameras.size(); i++){
         outfile << cameras[i].pos.x << " " <<
                    cameras[i].pos.y << " " <<

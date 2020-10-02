@@ -13,6 +13,7 @@
 #include <fstream>
 
 #include "ospray/ospray_cpp.h"
+#include "ospray/ospray_cpp/ext/rkcommon.h"
 
 using namespace rkcommon::math;
 

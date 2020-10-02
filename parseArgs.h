@@ -8,6 +8,10 @@ struct Args
 {
     std::string extension;
     std::string filename;
+    std::string view_file;
+    std::string opacity_file;
+    std::string color_file;
+    std::string out_dir;
     std::vector<std::string> timeStepPaths;
     std::string variableName;
     int timeStep = 0;
@@ -33,6 +37,14 @@ void parseArgs(int argc, const char **argv, Args &args)
         std::string arg = argv[i];
         if(arg == "-f"){
             args.filename = argv[++i];
+        }else if(arg=="-view"){
+            args.view_file = argv[++i];
+        }else if(arg=="-op"){
+            args.opacity_file = argv[++i];
+        }else if(arg=="-color"){
+            args.color_file = argv[++i];
+        }else if(arg=="-out_dir"){
+            args.out_dir = argv[++i];
         }else if(arg == "-time-step"){
             args.timeStep = std::atoi(argv[++i]);
         }else if(arg == "-variable"){

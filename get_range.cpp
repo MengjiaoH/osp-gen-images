@@ -5,6 +5,7 @@
 #include "parseArgs.h"
 #include "load_raw.h"
 #include <ospray/ospray_cpp.h>
+#include "ospray/ospray_cpp/ext/rkcommon.h"
 
 using namespace rkcommon::math;
 const std::string voxel_type = "float32";

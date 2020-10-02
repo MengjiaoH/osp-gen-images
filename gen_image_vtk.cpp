@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <dirent.h>
 #ifdef _WIN32
 #define NOMINMAX
 #include <malloc.h>
@@ -21,13 +22,13 @@ using namespace rkcommon::math;
 #include "make_ospvolume.h"
 #include "make_tf.h"
 #include "load_camera.h"
+#include "ArcballCamera.h"
+#include "ParamReader.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 const std::string voxel_type = "float32";
-const vec2f range{-2.92272, 0.407719};
-// const vec2f range{-1.0f, 1.0f};
 
 int main(int argc, const char **argv)
 {
@@ -39,51 +40,31 @@ int main(int argc, const char **argv)
     // parse Args
     Args args;
     parseArgs(argc, argv, args);
-    std::cout << "volume file : " << args.filename << std::endl;
-    std::cout << "dims: " << args.dims << std::endl;
-    //load single volume 
-    Volume volume;
-    const vec3i dims{args.dims, args.dims, args.dims};
-    volume = load_raw_volume(args.filename, dims, voxel_type);
+    // std::cout << "debug" << std::endl;
+    // load volume
+    // const vec3i dims{args.dims, args.dims*2, args.dims};
+    const vec3i dims{768, 336, 512};
+    Volume volume = load_raw_volume(args.filename, dims, voxel_type);
+    volume.dims = dims;
 
+    // std::cout << "debug 0" << std::endl;
+    // load view file
+    std::unique_ptr<ParamReader> p_reader(new ParamReader(args.view_file));
+    std::cout << p_reader->params.size() << std::endl;
+    std::vector<VolParam> params = p_reader->params;
+
+    std::string out_dir = args.out_dir;
+    // std::cout << "debug 1" << std::endl;
+    
     // Imgae size 
     vec2i imgSize;
-    imgSize.x = 300; // width
-    imgSize.y = 300; // height
-
-    //create a list of camera positions 
-    const int num = args.n_samples;
-    const box3f worldBound = box3f(-dims / 2 * volume.spacing, dims / 2 * volume.spacing);
-    std::vector<Camera> cameras = gen_cameras(num, worldBound);
-    std::cout << "camera pos:" << cameras.size() << std::endl;
+    imgSize.x = 256; // width
+    imgSize.y = 256; // height
     
-    std::ofstream outfile;
-    // save camera to file
-    outfile.open("/home/mengjiao/Desktop/projects/osp-gen-images/input.txt");
-    for(int i = 0; i < cameras.size(); i++){
-        outfile << cameras[i].pos.x << " " <<
-                   cameras[i].pos.y << " " <<
-                   cameras[i].pos.z << " " <<
-                   cameras[i].dir.x << " " <<
-                   cameras[i].dir.y << " " <<
-                   cameras[i].dir.z << " " << 
-                   cameras[i].up.x  << " " << 
-                   cameras[i].up.y  << " " << 
-                   cameras[i].up.z  << "\n";
-    }
-    outfile.close();
-    
-    // debug 
-    // for(int i = 0; i < cameras.size(); i++){
-    //     std::cout << "index: " << i << "\n";
-    //     std::cout << "pos: " << cameras[i].pos << "\n";
-    //     std::cout << "dir: " << cameras[i].dir << "\n";
-    //     std::cout << "up: " << cameras[i].up << "\n";
-    // }
     {
         // //! Transfer function
         const std::string colormap = "jet";
-        ospray::cpp::TransferFunction transfer_function = makeTransferFunction(colormap, range);
+        ospray::cpp::TransferFunction transfer_function = makeTransferFunction(colormap, volume.range);
 
         //! Volume
         ospray::cpp::Volume osp_volume = createStructuredVolume(volume);
@@ -114,7 +95,9 @@ int main(int argc, const char **argv)
         ospray::cpp::Renderer renderer("scivis");
 
         // complete setup of renderer
-        renderer.setParam("aoSamples", 0);
+        renderer.setParam("aoSamples", 10);
+        renderer.setParam("shadows", true);
+        renderer.setParam("pixelSamples", 2);
         renderer.setParam("backgroundColor", 1.0f); // white, transparent
         renderer.commit();
 
@@ -122,30 +105,40 @@ int main(int argc, const char **argv)
         ospray::cpp::FrameBuffer framebuffer(imgSize.x, imgSize.y, OSP_FB_SRGBA, OSP_FB_COLOR | OSP_FB_ACCUM);
         framebuffer.clear();
 
-        for(int i = 0; i < cameras.size(); i++){
+        for(int i = 0; i < params.size(); i++){
+            std::cout << "index " << i << std::endl;
             framebuffer.clear();
             //create and setup camera
+            // std::cout << "debug0" << std::endl;
+            Camera c = gen_cameras_from_vtk(params[i], volume);
+            // std::cout << "debug1" << std::endl;
             ospray::cpp::Camera camera("perspective");
             camera.setParam("aspect", imgSize.x / (float)imgSize.y);
-            camera.setParam("position", cameras[i].pos);
-            camera.setParam("direction", cameras[i].dir);
-            camera.setParam("up", cameras[i].up);
+            camera.setParam("position", c.pos);
+            camera.setParam("direction", c.dir);
+            camera.setParam("up", c.up);
+            camera.setParam("fovy", c.fovy);
             camera.commit(); // commit each object to indicate modifications are done
             // render 10 more frames, which are accumulated to result in a better
             // converged image
-            for (int frames = 0; frames < 10; frames++)
+            for (int frames = 0; frames < 100; frames++)
                 framebuffer.renderFrame(renderer, camera, world);
 
             uint32_t *fb = (uint32_t *)framebuffer.map(OSP_FB_COLOR);
-            std::string filename = "volume" + std::to_string(i+1) + ".jpg";
+            // std::cout << "file dir " << f.fileDir << std::endl;
+            std::string filename = out_dir + "/png/" + "volume_cam" + std::to_string(i)  + ".png";
+            std::string jpg_filename = out_dir + "/jpg/" + "volume_cam_" + std::to_string(i)  + ".jpg";
+            // + "_" + std::to_string(index)
             // std::cout << filename << std::endl;
-            stbi_write_jpg(filename.c_str(), imgSize.x, imgSize.y, 4, fb, 100);
+            stbi_write_png(filename.c_str(), imgSize.x, imgSize.y, 4, fb, imgSize.x * 4);
+            stbi_write_jpg(jpg_filename.c_str(), imgSize.x, imgSize.y, 4, fb, 100);
             framebuffer.unmap(fb);
-        }
 
+        }
     }
 
+    
+    
     ospShutdown();
     return 0;
-
 }

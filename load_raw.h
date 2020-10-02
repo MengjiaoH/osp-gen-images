@@ -21,6 +21,7 @@ struct Volume {
     vec3i dims;
     vec2f range;
     vec3f spacing{1.f};
+    vec3f origin{0.f};
     std::shared_ptr<std::vector<float>> voxel_data = nullptr;
 
     size_t n_voxels() const
@@ -92,7 +93,7 @@ Volume load_raw_volume(const std::string &fname,
     // find the range
     volume.range.x = *std::min_element(volume.voxel_data->begin(), volume.voxel_data->end());
     volume.range.y = *std::max_element(volume.voxel_data->begin(), volume.voxel_data->end());
-    // std::cout << "volume range: " << volume.range << std::endl;
+    std::cout << "volume range: " << volume.range << std::endl;
     // float b = 1.f / (volume.range.y - volume.range.x) * 255.f;
     // std::vector<float> &voxels = *volume.voxel_data;
     // for(int i = 0; i < volume.n_voxels(); ++i){
